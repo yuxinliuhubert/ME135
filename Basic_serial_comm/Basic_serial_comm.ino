@@ -3,12 +3,17 @@ void setup() {
   Serial.begin(9600);
 
 }
-int i = 0;
+double i = 0.0;
+double waitTime = 10;
 void loop() {
   // put your main code here, to run repeatedly:
 
-  Serial.println(i);
-  i = i+1;
-  delay(500);
+  double y = sin(i);
+
+
+  Serial.println(y);
+  i = i+waitTime*pow(10, -3);
+  
+  delay(waitTime);
 
 }
