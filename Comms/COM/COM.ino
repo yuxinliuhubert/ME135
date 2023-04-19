@@ -2,10 +2,12 @@
 #include <WiFi.h>
 #include "dataStruct.h"
 
-// Replace with the receiver's MAC address
-uint8_t receiver_mac[] = {0x54, 0x43, 0xB2, 0xDC, 0x8C, 0xA0};
+// Replace with the DAQ's MAC address
+uint8_t daq_mac[] = {0x54, 0x43, 0xB2, 0xDC, 0x8C, 0xA0};
 
-dataStruct data;
+com_send_struct send_data;
+
+int current_commanded_state;
 
 void setup() {
   Serial.begin(115200);
@@ -19,7 +21,7 @@ void setup() {
   }
 
   esp_now_peer_info_t peerInfo;
-  memcpy(peerInfo.peer_addr, receiver_mac, 6);
+  memcpy(peerInfo.peer_addr, daq_mac, 6);
   peerInfo.channel = 0;
   peerInfo.encrypt = false;
 
@@ -30,22 +32,41 @@ void setup() {
 
   esp_now_register_send_cb(OnDataSent);
   esp_now_register_recv_cb(OnDataRecv);
+
+  current_commanded_state = 0;
+}
+void SerialRead() {
+    if (Serial.available() > 0) {
+ current_commanded_state =  Serial.read()-48;
+// Serial.print("AVAILABLE--------------------");
+   // Serial.println(serialState);
+   // Serial.println(" ");
+ 
+  } 
 }
 
 void loop() {
-  data.temperature = 25.5;
-  data.humidity = 60;
-  data.isRaining = false;
+  SerialRead();
+  // if (Serial.available()) {
+  //   String inputString = Serial.readStringUntil('\n');
+  //   int inputValue =inputString.toInt();
+  //   // Serial.print("Serial Input: ");
+  //   // Serial.println(inputValue);
+  //   current_commanded_state = inputValue;
+  
+  // }
 
-
-
-  esp_err_t result = esp_now_send(receiver_mac, (uint8_t *)&data, sizeof(data));
-
-  // if (result == ESP_OK) {
+// Serial.print("Current command state: ");
+//     Serial.println(current_commanded_state);
+  send_data.commanded_state = current_commanded_state;
+  
+  esp_err_t result = esp_now_send(daq_mac, (uint8_t *) &send_data, sizeof(send_data));
+  //   if (result == ESP_OK) {
   //   Serial.println("Data sent!");
   // } else {
   //   Serial.println("Failed to send data!");
   // }
+
 
   delay(30);
 }
@@ -59,11 +80,14 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 }
 
 void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
-  dataStruct receivedData;
+  com_receive_struct receivedData;
   memcpy(&receivedData, data, sizeof(receivedData));
 
+  // Serial.print("daq state: ");
+  Serial.println(receivedData.daq_current_state);
+
   // // Serial.print("Temperature: ");
-  Serial.println(receivedData.temperature);
+  // Serial.println(receivedData.temperature);
   // Serial.print("Humidity: ");
   // Serial.println(receivedData.humidity);
   // Serial.print("Is raining: ");
