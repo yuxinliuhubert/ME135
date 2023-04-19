@@ -8,6 +8,7 @@ uint8_t daq_mac[] = {0x54, 0x43, 0xB2, 0xDC, 0x8C, 0xA0};
 com_send_struct send_data;
 
 int current_commanded_state;
+short int current_daq_state;
 
 void setup() {
   Serial.begin(115200);
@@ -34,10 +35,12 @@ void setup() {
   esp_now_register_recv_cb(OnDataRecv);
 
   current_commanded_state = 0;
+  current_daq_state = 0;
+  
 }
 void SerialRead() {
     if (Serial.available() > 0) {
- current_commanded_state =  Serial.read()-48;
+   current_commanded_state =  Serial.read()-48;
 // Serial.print("AVAILABLE--------------------");
    // Serial.println(serialState);
    // Serial.println(" ");
@@ -57,10 +60,12 @@ void loop() {
   // }
 
 // Serial.print("Current command state: ");
-//     Serial.println(current_commanded_state);
+    Serial.println(current_daq_state);
+if (send_data.commanded_state != current_commanded_state) {
   send_data.commanded_state = current_commanded_state;
   
   esp_err_t result = esp_now_send(daq_mac, (uint8_t *) &send_data, sizeof(send_data));
+}
   //   if (result == ESP_OK) {
   //   Serial.println("Data sent!");
   // } else {
@@ -83,8 +88,9 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
   com_receive_struct receivedData;
   memcpy(&receivedData, data, sizeof(receivedData));
 
+current_daq_state = receivedData.daq_current_state;
   // Serial.print("daq state: ");
-  Serial.println(receivedData.daq_current_state);
+  // Serial.println(receivedData.daq_current_state);
 
   // // Serial.print("Temperature: ");
   // Serial.println(receivedData.temperature);

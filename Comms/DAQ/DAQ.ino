@@ -37,9 +37,11 @@ void setup() {
 
 void loop() {
 
+if (send_data.daq_current_state != state) {
   send_data.daq_current_state = state;
     // Send data back to the sender
   esp_err_t result = esp_now_send(com_mac, (uint8_t *)&send_data, sizeof(send_data));
+}
 
   // if (result == ESP_OK) {
   //   Serial.println("Data sent back to sender!");
