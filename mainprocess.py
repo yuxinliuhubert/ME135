@@ -1,6 +1,6 @@
 import time
 import machine
-from machine import Pin, timer,ADC, I2C
+from machine import Pin, Timer,ADC, SoftI2C
 from ulab import numpy as np
 
 activated=0
@@ -12,13 +12,13 @@ DACsize=2^16
 ADCoffset = ADCsize/2
 mu=0.01
 
-FFL_PIN =1
-FBL_PIN = 2
-FFR_PIN = 3
-FBR_PIN =4
-FIVE_PIN =5
-SCL_PIN = 8
-SDA_PIN = 10
+FFL_PIN =32
+FBL_PIN = 33
+FFR_PIN = 34
+FBR_PIN =35
+FIVE_PIN =36
+SCL_PIN = 22
+SDA_PIN = 21
 OUTA =0
 OUTB = 1
 OUTC = 2
@@ -26,15 +26,15 @@ OUTD = 3
 DAC_ADDR=0x55
 cmd=24
 
-weigthsL= np.zeros(windowsize, dtype=float)
-weightsR= np.zeros(windowsize, dtype=float)
-FFLB= np.zeros(windowsize, dtype=float)
-FBLB= np.zeros(windowsize, dtype=float)
-FFRB= np.zeros(windowsize, dtype=float)
-FBRB= np.zeros(windowsize, dtype=float)
-FIVEB= np.zeros(windowsize, dtype=float)
+weightsL= np.zeros(windowsize)
+weightsR= np.zeros(windowsize)
+FFLB= np.zeros(windowsize)
+FBLB= np.zeros(windowsize)
+FFRB= np.zeros(windowsize)
+FBRB= np.zeros(windowsize)
+FIVEB= np.zeros(windowsize)
 
-i2c=I2C(0,scl=Pin(SCL_PIN),sda=Pin(SDA_PIN),freq=i2cFreq)
+i2c=SoftI2C(Pin(SCL_PIN),Pin(SDA_PIN),freq=i2cFreq)
 
 FFL=ADC(Pin(FFL_PIN))
 FFL.atten(ADC.ATTN_11DB)
@@ -47,34 +47,40 @@ FBR.atten(ADC.ATTN_11DB)
 FIVE=ADC(Pin(FIVE_PIN))
 FIVE.atten(ADC.ATTN_11DB)
 
+def signalProcess(d, weights, buffer):
+    y=np.dot(weights,buffer)
+    out=(y/ADCsize)*DACsize-1
+    norm_buffer=np.linalg.norm(buffer)+1e-8
+    weights += mu*(d-y)*buffer/norm_buffer
+    return y, weights
 
 def process(timer):
-    global weigthsL
+    global weightsL
     global weightsR
     global FFLB
     global FBLB
     global FFRB
     global FBRB
     global FIVEB
-    FFLB= np.roll(FFL,1)
-    FBLB= np.roll(FBL,1)
-    FFRB= np.roll(FFR,1)
-    FBRB= np.roll(FBR,1)
-    FIVEB= np.roll(FIVE,1)
+    FFLB= np.roll(FFLB,1)
+    FBLB= np.roll(FBLB,1)
+    FFRB= np.roll(FFRB,1)
+    FBRB= np.roll(FBRB,1)
+    FIVEB= np.roll(FIVEB,1)
     FFLB[0]=FFL.read() - ADCoffset
     FBLB[0]=FBL.read() - ADCoffset
     FFRB[0]=FFR.read() - ADCoffset
     FBRB[0]=FBR.read() - ADCoffset
-    FIVE[0]=FIVE.read() - ADCoffset
+    FIVEB[0]=FIVE.read() - ADCoffset
     if(not activated):
         dL=FFLB[0]
         dR=FFRB[0]
     NLMSL, weightsL = signalProcess(dL,weightsL,FBLB)
-    NLMSR,weightsR=signalProcess(dR,weigthsR, FBRB)
-    i2c.writeto(DAC_ADDR,((cmd+OUTA).to_bytes()+NLMSL.to_bytes(2)))
-    i2c.writeto(DAC_ADDR,((cmd+OUTB).to_bytes()+dL.to_bytes(2)))
-    i2c.writeto(DAC_ADDR,((cmd+OUTC).to_bytes()+NLMSR.to_bytes(2)))
-    i2c.writeto(DAC_ADDR,((cmd+OUTD).to_bytes()+dR.to_bytes(2)))
+    NLMSR,weightsR=signalProcess(dR,weightsR, FBRB)
+    i2c.writeto(DAC_ADDR,(int(cmd+OUTA).to_bytes(1,"big")+int(NLMSL).to_bytes(2,"big")))
+    i2c.writeto(DAC_ADDR,(int(cmd+OUTB).to_bytes(1,"big")+int(dL).to_bytes(2,"big")))
+    i2c.writeto(DAC_ADDR,(int(cmd+OUTC).to_bytes(1,"big")+int(NLMSR).to_bytes(2,"big")))
+    i2c.writeto(DAC_ADDR,(int(cmd+OUTD).to_bytes(1,"big")+int(dR).to_bytes(2,"big")))
 
 t1= Timer(0)
 t1.init(mode=Timer.PERIODIC, freq=timerFreq, callback=process)
@@ -89,9 +95,6 @@ except:
     t1.deinit()
     pass
 
-def signalProcess(d, weigths, buffer):
-    y=np.dot(weights,buffer)
-    out=(y/ADCsize)*DACsize-1
-    norm_buffer=np.linalg.norm(buffer)+1e-8
-    weights += mu*(d-y)*buffer/norm_buffer
-    return y, weights
+
+
+
