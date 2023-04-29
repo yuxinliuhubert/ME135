@@ -5,8 +5,10 @@ from ulab import numpy as np
 
 activated=0
 timerFreq= 48000
+FFTFreq = 10
 i2cFreq=480000
 windowsize=256
+threshsize=5
 ADCsize = 4096
 DACsize=2^16
 ADCoffset = ADCsize/2
@@ -33,6 +35,8 @@ FBLB= np.zeros(windowsize)
 FFRB= np.zeros(windowsize)
 FBRB= np.zeros(windowsize)
 FIVEB= np.zeros(windowsize)
+FREQS=np.zeros(windowsize)
+THRESHS=np.zeros(threshsize)
 
 i2c=SoftI2C(Pin(SCL_PIN),Pin(SDA_PIN),freq=i2cFreq)
 
@@ -53,6 +57,18 @@ def signalProcess(d, weights, buffer):
     norm_buffer=np.linalg.norm(buffer)+1e-8
     weights += mu*(d-y)*buffer/norm_buffer
     return y, weights
+    
+def FFTprocess(timer):
+    global FREQS
+    global THRESHS
+    real,imag=np.fft.fft(FFLB)
+    for i in range(windowsize):
+        FREQS[i]=np.sqrt(real[i]**2+imag[i]**2)
+    real,imag=np.fft.fft(FFRB)
+    for i in range(windowsize):
+        FREQS[i]=(np.sqrt(real[i]**2+imag[i]**2)+FREQS[i])/2
+    THRESHS=np.sort(FREQS)[windowsize-threshsize:windowsize]
+    
 
 def process(timer):
     global weightsL
@@ -84,10 +100,12 @@ def process(timer):
 
 t1= Timer(0)
 t1.init(mode=Timer.PERIODIC, freq=timerFreq, callback=process)
+t2= Timer(1)
+t2.init(mode=Timer.PERIODIC, freq=FFTFreq, callback=FFTprocess)
 
 try:
     while(1):
-        micsOut=[FFLB[0],FBLB[0],FFRB[0],FBRB[0],FIVE[0]] #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
+        micsOut=[FFLB[0],FBLB[0],FFRB[0],FBRB[0],FIVE[0]]+FREQS.tolist()+THRESHS.tolist() #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
         Command=input('')
         #This is where the serial communication code goes. All that needs to be put here is something that changes the "activated" boolean to turn things on and off and maybe a pull request for the data.
 
