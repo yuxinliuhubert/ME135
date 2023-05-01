@@ -1,7 +1,9 @@
 import time
 import machine
-from machine import Pin, Timer,ADC, SoftI2C
+from machine import Pin, Timer,ADC, SoftI2C, UART
 from ulab import numpy as np
+
+uart = UART(1,baudrate=115200, tx=1, rx=3)
 
 activated=0
 timerFreq= 48000
@@ -93,10 +95,10 @@ def process(timer):
         dR=FFRB[0]
     NLMSL, weightsL = signalProcess(dL,weightsL,FBLB)
     NLMSR,weightsR=signalProcess(dR,weightsR, FBRB)
-    i2c.writeto(DAC_ADDR,(int(cmd+OUTA).to_bytes(1,"big")+int(NLMSL).to_bytes(2,"big")))
-    i2c.writeto(DAC_ADDR,(int(cmd+OUTB).to_bytes(1,"big")+int(dL).to_bytes(2,"big")))
-    i2c.writeto(DAC_ADDR,(int(cmd+OUTC).to_bytes(1,"big")+int(NLMSR).to_bytes(2,"big")))
-    i2c.writeto(DAC_ADDR,(int(cmd+OUTD).to_bytes(1,"big")+int(dR).to_bytes(2,"big")))
+    # i2c.writeto(DAC_ADDR,(int(cmd+OUTA).to_bytes(1,"big")+int(NLMSL).to_bytes(2,"big")))
+    # i2c.writeto(DAC_ADDR,(int(cmd+OUTB).to_bytes(1,"big")+int(dL).to_bytes(2,"big")))
+    # i2c.writeto(DAC_ADDR,(int(cmd+OUTC).to_bytes(1,"big")+int(NLMSR).to_bytes(2,"big")))
+    # i2c.writeto(DAC_ADDR,(int(cmd+OUTD).to_bytes(1,"big")+int(dR).to_bytes(2,"big")))
 
 t1= Timer(0)
 t1.init(mode=Timer.PERIODIC, freq=timerFreq, callback=process)
@@ -104,9 +106,17 @@ t2= Timer(1)
 t2.init(mode=Timer.PERIODIC, freq=FFTFreq, callback=FFTprocess)
 
 try:
+    print("start receive")
     while(1):
-        micsOut=[FFLB[0],FBLB[0],FFRB[0],FBRB[0],FIVE[0]]+FREQS.tolist()+THRESHS.tolist() #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
-        Command=input('')
+        # micsOut=[FFLB[0],FBLB[0],FFRB[0],FBRB[0],FIVE[0]]+FREQS.tolist()+THRESHS.tolist() #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
+        # Command=input('')
+        
+        if uart.any():
+            Command=uart.readline()
+            # Command=input('')
+            print("received: ",Command)
+            uart.write(Command)
+
         #This is where the serial communication code goes. All that needs to be put here is something that changes the "activated" boolean to turn things on and off and maybe a pull request for the data.
 
 except:
