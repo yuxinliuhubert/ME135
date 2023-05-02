@@ -5,7 +5,8 @@ from ulab import numpy as np
 
 
 
-uart = UART(2,baudrate=115200, tx=22, rx=23)
+uart = UART(1,baudrate=115200, tx=27, rx=23)
+# uart = UART(1,baudrate=115200, tx=1, rx=3)
 
 activated=0
 timerFreq= 48000
@@ -109,16 +110,29 @@ t2.init(mode=Timer.PERIODIC, freq=FFTFreq, callback=FFTprocess)
 
 try:
     print("start receive")
+    i = 0
+    number = 1
+    number2 = 50
     while(1):
         # micsOut=[FFLB[0],FBLB[0],FFRB[0],FBRB[0],FIVE[0]]+FREQS.tolist()+THRESHS.tolist() #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
         # Command=input('')
-        number = "69"
+        
+        message = str(number) +" " + str(number2) + " \n"
             # Command=input('')
             # print("received: ",Command)
-        uart.write(number)
+        uart.write(message)
+        print(message)
+        number = number + 1
+        number2 = number2 + 1
 
+        time.sleep_ms(30)
+        i = i + 1
+        if (i == 1000):
+            break
+    
         #This is where the serial communication code goes. All that needs to be put here is something that changes the "activated" boolean to turn things on and off and maybe a pull request for the data.
 
 except:
+    print("exited")
     t1.deinit()
     pass

@@ -60,7 +60,7 @@ void loop() {
   // }
 
 // Serial.print("Current command state: ");
-    Serial.println(current_daq_state);
+    // Serial.println(current_daq_state);
 if (send_data.commanded_state != current_commanded_state) {
   send_data.commanded_state = current_commanded_state;
   
@@ -89,8 +89,15 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
   memcpy(&receivedData, data, sizeof(receivedData));
 
 current_daq_state = receivedData.daq_current_state;
+Serial.print(receivedData.data[0]);
+Serial.print(" ");
+Serial.println(receivedData.data[1]);
+
+
+// Serial.print("received DAQ String: ");
   // Serial.print("daq state: ");
-  // Serial.println(receivedData.daq_current_state);
+  // Serial.println(receivedData.dataString);
+
 
   // // Serial.print("Temperature: ");
   // Serial.println(receivedData.temperature);

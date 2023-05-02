@@ -1,23 +1,22 @@
 #include <esp_now.h>
 #include <WiFi.h>
 #include "dataStruct.h"
-#include <SoftwareSerial.h>
 
 // Replace with the COM's MAC address
 uint8_t com_mac[] = {0x94, 0xB5, 0x55, 0x6B, 0x37, 0xAC};
-const size_t bufferSize = 10;
-uint8_t buffer[bufferSize]; 
 int state = 0;
 #define RX 22
 #define TX 23
 
+String receivedLine = "";
+
+
 daq_send_struct send_data;
 
-EspSoftwareSerial::UART circuitSerial;
 
 void setup() {
   Serial.begin(115200);
-  circuitSerial.begin(115200,SWSERIAL_8N1,RX,TX);
+  Serial1.begin(115200,SERIAL_8N1,RX,TX);
 
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
@@ -41,31 +40,33 @@ void setup() {
   esp_now_register_recv_cb(OnDataRecv);
 }
 
+
 void loop() {
 
 if (send_data.daq_current_state != state) {
   send_data.daq_current_state = state;
     // Send data back to the sender
-
-    circuitSerial.println(state);
+    // circuitSerial.println(state);
   esp_err_t result = esp_now_send(com_mac, (uint8_t *)&send_data, sizeof(send_data));
 }
 
-if (circuitSerial.available() > 0) {
+if (Serial1.available() > 0) {
 
-  int avail = circuitSerial.read(buffer,bufferSize);
+  String receivedChar = Serial1.readStringUntil('\n');
+  // send_data.dataString = receivedChar;
+  
+  sliceString(receivedChar, send_data.daq_send_data);
+  esp_err_t result = esp_now_send(com_mac, (uint8_t *)&send_data, sizeof(send_data));
 
-     Serial.print("received confirmation: ");
-     for (size_t i = 0; i < bufferSize; ++i) {
-  Serial.print("buffer[");
-  Serial.print(i);
-  Serial.print("] = ");
-  Serial.println(buffer[i], DEC); // DEC is used to print the numbers in decimal format
-}
-
-
-  // Serial.print("received confirmation: ");
-  // Serial.println(Serial1.readStringUntil('\n'));
+  
+    // if (receivedChar == "\n") {
+    //   Serial.print("Whole String: ");
+    //   Serial.println(receivedLine);
+    //   receivedLine = "";
+    // } else {
+    //   Serial.print(receivedChar);
+    //   receivedLine += receivedChar;
+    // }
     // esp_err_t result = esp_now_send(com_mac, (uint8_t *)&send_data, sizeof(send_data));
 
 }
@@ -77,6 +78,24 @@ if (circuitSerial.available() > 0) {
   // }
 
   delay(30);
+}
+
+void sliceString(String data, int * fillArray) {
+  int stringSize = data.length();
+  int startingPoint = 0;
+  int index = 0;
+  for (int i = 0; i < stringSize; i++) {
+    if (data.charAt(i) == ' ') {
+      fillArray[index] = data.substring(startingPoint, i).toInt();
+      Serial.print(index);
+      startingPoint = (i+1);
+      index = index + 1;
+
+    }
+  }
+  Serial.println();
+
+
 }
 
 void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
