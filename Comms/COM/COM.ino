@@ -88,10 +88,19 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
   com_receive_struct receivedData;
   memcpy(&receivedData, data, sizeof(receivedData));
 
+  int number, number2;
+
 current_daq_state = receivedData.daq_current_state;
-Serial.print(receivedData.data[0]);
+
+memcpy(&number, &receivedData.daq_send_data[0], sizeof(int));
+memcpy(&number2, &receivedData.daq_send_data[1*BYTEFORNUM], sizeof(int));
+Serial.print(number);
 Serial.print(" ");
-Serial.println(receivedData.data[1]);
+Serial.println(number2);
+
+// Serial.print(receivedData.data[0]);
+// Serial.print(" ");
+// Serial.println(receivedData.data[1]);
 
 
 // Serial.print("received DAQ String: ");

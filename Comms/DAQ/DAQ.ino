@@ -50,13 +50,40 @@ if (send_data.daq_current_state != state) {
   esp_err_t result = esp_now_send(com_mac, (uint8_t *)&send_data, sizeof(send_data));
 }
 
-if (Serial1.available() > 0) {
+if (Serial1.available() >= 8) {
 
-  String receivedChar = Serial1.readStringUntil('\n');
-  // send_data.dataString = receivedChar;
+int number,number2;
+  // String receivedChar = Serial1.readStringUntil('\n');
+  // // send_data.dataString = receivedChar;
   
-  sliceString(receivedChar, send_data.daq_send_data);
+  // sliceString(receivedChar, send_data.daq_send_data);
+
+  // uint8_t buffer[byteSize];
+
+Serial.print("raw dataPoints: ");
+    // Read 8 bytes from the serial buffer
+    for (int i = 0; i < byteSize; i++) {
+      send_data.daq_send_data[i] = Serial1.read();
+      Serial.print(send_data.daq_send_data[i]);
+
+    }
+    Serial.println();
+
+    // send_data.daq_send_data = buffer;
+
+    // Convert the binary data to integers
+    memcpy(&number, &send_data.daq_send_data[0], sizeof(int));
+    memcpy(&number2, &send_data.daq_send_data[1*BYTEFORNUM], sizeof(int));
+
+        // Print the received numbers
+    
+    Serial.print("Received number: ");
+    Serial.print(number);
+    Serial.print(" and ");
+    Serial.println(number2);
+
   esp_err_t result = esp_now_send(com_mac, (uint8_t *)&send_data, sizeof(send_data));
+  memset(send_data.daq_send_data,0,byteSize);
 
   
     // if (receivedChar == "\n") {
@@ -77,7 +104,7 @@ if (Serial1.available() > 0) {
   //   Serial.println("Failed to send data back to sender!");
   // }
 
-  delay(30);
+  // delay(30);
 }
 
 void sliceString(String data, int * fillArray) {
@@ -87,7 +114,8 @@ void sliceString(String data, int * fillArray) {
   for (int i = 0; i < stringSize; i++) {
     if (data.charAt(i) == ' ') {
       fillArray[index] = data.substring(startingPoint, i).toInt();
-      Serial.print(index);
+      Serial.print(fillArray[index]);
+      Serial.print(" ");
       startingPoint = (i+1);
       index = index + 1;
 

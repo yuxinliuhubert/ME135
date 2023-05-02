@@ -1,5 +1,6 @@
 import time
 import machine
+import struct
 from machine import Pin, Timer,ADC, SoftI2C, UART
 from ulab import numpy as np
 
@@ -117,22 +118,29 @@ try:
         # micsOut=[FFLB[0],FBLB[0],FFRB[0],FBRB[0],FIVE[0]]+FREQS.tolist()+THRESHS.tolist() #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
         # Command=input('')
         
-        message = str(number) +" " + str(number2) + " \n"
-            # Command=input('')
-            # print("received: ",Command)
+        # # message = str(number) +" " + str(number2) + " \n"
+        # message = str(number)
+        #     # Command=input('')
+        #     # print("received: ",Command)
+        # uart.write(message)
+        # # print(message)
+        # number = number + 1
+        # number2 = number2 + 1
+
+        message = struct.pack("ii", number, number2)  # Convert the two integers to binary data
         uart.write(message)
-        print(message)
+        # print(message)
         number = number + 1
         number2 = number2 + 1
 
-        time.sleep_ms(30)
+        # time.sleep_ms(30)
         i = i + 1
         if (i == 1000):
             break
     
         #This is where the serial communication code goes. All that needs to be put here is something that changes the "activated" boolean to turn things on and off and maybe a pull request for the data.
 
-except:
+except KeyboardInterrupt:
     print("exited")
     t1.deinit()
     pass
