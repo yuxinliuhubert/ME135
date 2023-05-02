@@ -3,8 +3,9 @@ import machine
 from machine import Pin, Timer,ADC, SoftI2C, UART
 from ulab import numpy as np
 
-uart = UART(1,baudrate=115200, tx=1, rx=3)
-
+print("1")
+uart = UART(0,baudrate=115200, tx=1, rx=3)
+print("2")
 activated=0
 timerFreq= 48000
 FFTFreq = 10
@@ -15,7 +16,7 @@ ADCsize = 4096
 DACsize=2^16
 ADCoffset = ADCsize/2
 mu=0.01
-
+print("3")
 FFL_PIN =32
 FBL_PIN = 33
 FFR_PIN = 34
@@ -29,7 +30,7 @@ OUTC = 2
 OUTD = 3
 DAC_ADDR=0x55
 cmd=24
-
+print("4")
 weightsL= np.zeros(windowsize)
 weightsR= np.zeros(windowsize)
 FFLB= np.zeros(windowsize)
@@ -40,8 +41,10 @@ FIVEB= np.zeros(windowsize)
 FREQS=np.zeros(windowsize)
 THRESHS=np.zeros(threshsize)
 
+print("5")
 i2c=SoftI2C(Pin(SCL_PIN),Pin(SDA_PIN),freq=i2cFreq)
 
+print("6")
 FFL=ADC(Pin(FFL_PIN))
 FFL.atten(ADC.ATTN_11DB)
 FBL=ADC(Pin(FBL_PIN))
@@ -53,6 +56,7 @@ FBR.atten(ADC.ATTN_11DB)
 FIVE=ADC(Pin(FIVE_PIN))
 FIVE.atten(ADC.ATTN_11DB)
 
+print("7")
 def signalProcess(d, weights, buffer):
     y=np.dot(weights,buffer)
     out=(y/ADCsize)*DACsize-1
@@ -99,30 +103,44 @@ def process(timer):
     # i2c.writeto(DAC_ADDR,(int(cmd+OUTB).to_bytes(1,"big")+int(dL).to_bytes(2,"big")))
     # i2c.writeto(DAC_ADDR,(int(cmd+OUTC).to_bytes(1,"big")+int(NLMSR).to_bytes(2,"big")))
     # i2c.writeto(DAC_ADDR,(int(cmd+OUTD).to_bytes(1,"big")+int(dR).to_bytes(2,"big")))
-
+print("8")
 t1= Timer(0)
 t1.init(mode=Timer.PERIODIC, freq=timerFreq, callback=process)
 t2= Timer(1)
 t2.init(mode=Timer.PERIODIC, freq=FFTFreq, callback=FFTprocess)
-
+print("9")
 try:
-    print("start receive")
+    # print("start receive")
+    number = 0
+    number2 = 50
+    i = 0
     while(1):
         # micsOut=[FFLB[0],FBLB[0],FFRB[0],FBRB[0],FIVE[0]]+FREQS.tolist()+THRESHS.tolist() #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
         # Command=input('')
         
-        if uart.any():
-            Command=uart.readline()
-            # Command=input('')
-            print("received: ",Command)
-            uart.write(Command)
 
+        message = str(number) + " " + str(number2) + "\n"
+    
+        # Command=uart.readline()
+            # Command=input('')
+        print(message)
+        # uart.write(number)
+        
+        number = number + 1
+        number2 = number2 + 1
+
+        # time.sleep_ms(30)
+        i = i + 1
+        if (i == 1000):
+            break
+    
         #This is where the serial communication code goes. All that needs to be put here is something that changes the "activated" boolean to turn things on and off and maybe a pull request for the data.
 
-except:
+except KeyboardInterrupt:
+    print("exited")
     t1.deinit()
+    t2.deinit()
     pass
-
 
 
 
