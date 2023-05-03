@@ -11,8 +11,8 @@ uart = UART(1,baudrate=115200, tx=27, rx=23)
 
 activated=0
 timerFreq= 48000
-FFTFreq = 10
-i2cFreq=480000
+FFTFreq = 1
+i2cFreq=480000/2
 windowsize=256
 threshsize=5
 ADCsize = 4096
@@ -115,7 +115,7 @@ try:
     number = 1
     number2 = 50
     while(1):
-        # micsOut=[FFLB[0],FBLB[0],FFRB[0],FBRB[0],FIVE[0]]+FREQS.tolist()+THRESHS.tolist() #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
+        # micsOut=[FFLB[0],FBLB[0],FFRB[0],FBRB[0],FIVE[0]]+FREQS[0:windowsize/2].tolist()+THRESHS.tolist() #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
         # Command=input('')
         
 #         message = str(number) +" " + str(number2) + " \n"
