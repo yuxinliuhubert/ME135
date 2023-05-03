@@ -13,7 +13,7 @@ uart = UART(0,baudrate=115200, tx=1, rx=3)
 activated=0
 timerFreq= 48000
 FFTFreq = 1
-i2cFreq=480000
+i2cFreq=480000/2
 windowsize=256
 threshsize=5
 ADCsize = 4096
