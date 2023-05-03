@@ -11,7 +11,7 @@ int current_commanded_state;
 short int current_daq_state;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(921600);
 
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
@@ -73,7 +73,7 @@ if (send_data.commanded_state != current_commanded_state) {
   // }
 
 
-  delay(30);
+  // delay(30);
 }
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
@@ -88,12 +88,12 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
   com_receive_struct receivedData;
   memcpy(&receivedData, data, sizeof(receivedData));
 
-  int number, number2;
+  uint16_t number, number2;
 
 current_daq_state = receivedData.daq_current_state;
 
-memcpy(&number, &receivedData.daq_send_data[0], sizeof(int));
-memcpy(&number2, &receivedData.daq_send_data[1*BYTEFORNUM], sizeof(int));
+memcpy(&number, &receivedData.daq_send_data[0], sizeof(uint16_t));
+memcpy(&number2, &receivedData.daq_send_data[1*BYTEFORNUM], sizeof(uint16_t));
 Serial.print(number);
 Serial.print(" ");
 Serial.println(number2);

@@ -8,6 +8,8 @@ int state = 0;
 #define RX 22
 #define TX 23
 
+int num = 0;
+int num2 = 50;
 String receivedLine = "";
 
 
@@ -15,7 +17,7 @@ daq_send_struct send_data;
 
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(921600);
   Serial1.begin(115200,SERIAL_8N1,RX,TX);
 
   WiFi.mode(WIFI_STA);
@@ -50,9 +52,28 @@ if (send_data.daq_current_state != state) {
   esp_err_t result = esp_now_send(com_mac, (uint8_t *)&send_data, sizeof(send_data));
 }
 
+// if (num < 100000) {
+// Serial.print(num);
+// Serial.print(" ");
+// Serial.println(num2);
+
+// // for (int i = 0; i < byteSize; i++) {
+// //       send_data.daq_send_data[i] = Serial1.read();
+// //       Serial.print(send_data.daq_send_data[i]);
+
+// //     }
+// //     Serial.println();
+
+
+// num += 1;
+// num2 += 1;
+// }
+
+// esp_err_t result = esp_now_send(com_mac, (uint8_t *)&send_data, sizeof(send_data));
+
 if (Serial1.available() >= 8) {
 
-int number,number2;
+uint16_t number,number2;
   // String receivedChar = Serial1.readStringUntil('\n');
   // // send_data.dataString = receivedChar;
   
@@ -72,8 +93,8 @@ Serial.print("raw dataPoints: ");
     // send_data.daq_send_data = buffer;
 
     // Convert the binary data to integers
-    memcpy(&number, &send_data.daq_send_data[0], sizeof(int));
-    memcpy(&number2, &send_data.daq_send_data[1*BYTEFORNUM], sizeof(int));
+    memcpy(&number, &send_data.daq_send_data[0], sizeof(uint16_t));
+    memcpy(&number2, &send_data.daq_send_data[1*BYTEFORNUM], sizeof(uint16_t));
 
         // Print the received numbers
     
