@@ -7,7 +7,7 @@ uart = UART(1,baudrate=115200, tx=1, rx=3)
 
 activated=0
 timerFreq= 48000
-FFTFreq = 10
+FFTFreq = 1
 i2cFreq=480000
 windowsize=256
 threshsize=5
@@ -108,7 +108,7 @@ t2.init(mode=Timer.PERIODIC, freq=FFTFreq, callback=FFTprocess)
 try:
     print("start receive")
     while(1):
-        # micsOut=[FFLB[0],FBLB[0],FFRB[0],FBRB[0],FIVE[0]]+FREQS.tolist()+THRESHS.tolist() #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
+        # micsOut=[FFLB[0],FBLB[0],FFRB[0],FBRB[0],FIVE[0]]+FREQS[0:windowsize/2].tolist()+THRESHS.tolist() #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
         # Command=input('')
         
         if uart.any():
