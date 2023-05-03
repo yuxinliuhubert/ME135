@@ -11,7 +11,7 @@ int state = 0;
 int num = 0;
 int num2 = 50;
 String receivedLine = "";
-
+esp_err_t result = ESP_OK;
 
 daq_send_struct send_data;
 
@@ -49,7 +49,7 @@ if (send_data.daq_current_state != state) {
   send_data.daq_current_state = state;
     // Send data back to the sender
     // circuitSerial.println(state);
-  esp_err_t result = esp_now_send(com_mac, (uint8_t *)&send_data, sizeof(send_data));
+  result = esp_now_send(com_mac, (uint8_t *)&send_data, sizeof(send_data));
 }
 
 // if (num < 100000) {
@@ -103,7 +103,7 @@ Serial.print("raw dataPoints: ");
     Serial.print(" and ");
     Serial.println(number2);
 
-  esp_err_t result = esp_now_send(com_mac, (uint8_t *)&send_data, sizeof(send_data));
+  result = esp_now_send(com_mac, (uint8_t *)&send_data, sizeof(send_data));
   memset(send_data.daq_send_data,0,byteSize);
 
   

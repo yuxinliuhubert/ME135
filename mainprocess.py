@@ -1,17 +1,18 @@
 import time
 import machine
 import struct
+import random
 from machine import Pin, Timer,ADC, SoftI2C, UART
 from ulab import numpy as np
 
 
 
-uart = UART(1,baudrate=115200, tx=27, rx=23)
-# uart = UART(0,baudrate=921600, tx=1, rx=3)
+# uart = UART(1,baudrate=115200, tx=27, rx=23)
+uart = UART(0,baudrate=115200, tx=1, rx=3)
 
 activated=0
 timerFreq= 48000
-FFTFreq = 10
+FFTFreq = 1
 i2cFreq=480000
 windowsize=256
 threshsize=5
@@ -104,20 +105,26 @@ def process(timer):
     # i2c.writeto(DAC_ADDR,(int(cmd+OUTC).to_bytes(1,"big")+int(NLMSR).to_bytes(2,"big")))
     # i2c.writeto(DAC_ADDR,(int(cmd+OUTD).to_bytes(1,"big")+int(dR).to_bytes(2,"big")))
 
-# t1= Timer(0)
-# t1.init(mode=Timer.PERIODIC, freq=timerFreq, callback=process)
-# t2= Timer(1)
-# t2.init(mode=Timer.PERIODIC, freq=FFTFreq, callback=FFTprocess)
+t1= Timer(0)
+t1.init(mode=Timer.PERIODIC, freq=timerFreq, callback=process)
+t2= Timer(1)
+t2.init(mode=Timer.PERIODIC, freq=FFTFreq, callback=FFTprocess)
 
 try:
     print("start receive")
     i = 0
     number = 1
-    number2 = 50
+    number2 = 1
     while(1):
-        # micsOut=[FFLB[0],FBLB[0],FFRB[0],FBRB[0],FIVE[0]]+FREQS.tolist()+THRESHS.tolist() #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
+        FREQS += 1
+#         micsOut=FREQS[0:windowsize/2].tolist()+THRESHS.tolist() #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
         # Command=input('')
         
+#         micsOut = list(map(int, FREQS[0:windowsize//2])) + list(map(int, THRESHS))
+        
+        freqsString = ' '.join(map(str, list(map(int, FREQS[0:windowsize//2]))))
+        threshString = ' '.join(map(str, THRESHS))
+
 #         message = str(number) +" " + str(number2) + " \n"
 #         # message = str(number)
 #         #     # Command=input('')
@@ -126,17 +133,47 @@ try:
 #         #print(message)
 #         number = number + 1
 #         number2 = number2 + 1
+#         time.sleep_ms(1)
 
-        message = struct.pack("HH", number, number2)  # Convert the two integers to binary data
-        uart.write(message)
+
+#         message = ""
+# # 
+#         for i in range(200):
+#             message += str(number) + " "
+# #         message = struct.pack("HH", number, number2)  # Convert the two integers to binary data
+#         message += "\n"
+# #         uart.write(message)
+#         print(message)
+
+
+        # import struct
+
+        # # Define the format string for 200 unsigned 16-bit integers
+        # format_string = "200H"
+
+        # # Create a tuple containing the 200 variables you want to pack
+        # # In this example, I'm using dummy data for simplicity
+        # variables = tuple(range(1, 201))
+
+        # # Use the struct.pack() function to pack the variables together
+        # packed_data = struct.pack(format_string, *variables)
+
+        # # You can print the packed data to see the binary representation
+        # print(packed_data)
+        list_str = freqsString + "," + threshString
+
+        print(list_str)
+
+    
+        
 #         print("hi")
 #         print("num1: " + str(number) + "  num2:" + str(number2))
         number = number +1
-        number2 = number2 +1
+        number2 = number2 +1 
 
 #         time.sleep_ms(1)
         i = i + 1
-        if (i == 1000):
+        if (i == 4096):
             print("finished")
             break
     
