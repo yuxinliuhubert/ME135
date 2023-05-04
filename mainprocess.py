@@ -2,6 +2,7 @@ import time
 import machine
 import struct
 import random
+import math
 from machine import Pin, Timer,ADC, SoftI2C, UART
 from ulab import numpy as np
 
@@ -9,17 +10,31 @@ from ulab import numpy as np
 
 # uart = UART(1,baudrate=115200, tx=27, rx=23)
 uart = UART(0,baudrate=115200, tx=1, rx=3)
-
+t=0
 activated=0
 timerFreq= 48000
 FFTFreq = 1
-i2cFreq=480000/2
-windowsize=256
+NLMSFreq=1000
+i2cFreq=480000
+windowsize=4096
 threshsize=5
 ADCsize = 4096
 DACsize=2^16
 ADCoffset = ADCsize/2
 mu=0.01
+dL=0
+dR=0
+
+
+micDist=.2 #m
+
+x=[]
+y=[]
+for i in range(threshsize):
+    x[i]=math.cos(math.pi*(i/4)-math.pi/2)
+    y[i]=math.sin(math.pi*(i/4)-math.pi/2)
+
+simfreqs=200*range(1,6)
 
 FFL_PIN =32
 FBL_PIN = 33
@@ -42,8 +57,11 @@ FBLB= np.zeros(windowsize)
 FFRB= np.zeros(windowsize)
 FBRB= np.zeros(windowsize)
 FIVEB= np.zeros(windowsize)
-FREQS=np.zeros(windowsize)
-THRESHS=np.zeros(threshsize)
+FREQSL=np.zeros(windowsize/2)
+FREQSR=np.zeros(windowsize/2)
+THRESHSL=np.zeros(threshsize)
+THRESHSR=np.zeros(threshsize)
+THRESHSM=np.zeros(threshsize)
 
 i2c=SoftI2C(Pin(SCL_PIN),Pin(SDA_PIN),freq=i2cFreq)
 
@@ -55,8 +73,7 @@ FFR=ADC(Pin(FFR_PIN))
 FFR.atten(ADC.ATTN_11DB)
 FBR=ADC(Pin(FBR_PIN))
 FBR.atten(ADC.ATTN_11DB)
-FIVE=ADC(Pin(FIVE_PIN))
-FIVE.atten(ADC.ATTN_11DB)
+
 
 def signalProcess(d, weights, buffer):
     y=np.dot(weights,buffer)
@@ -64,42 +81,67 @@ def signalProcess(d, weights, buffer):
     norm_buffer=np.linalg.norm(buffer)+1e-8
     weights += mu*(d-y)*buffer/norm_buffer
     return y, weights
-    
+
+def simulation(t,x,y,simfreqs,overamp):
+    base=random.random()
+    L=base
+    R=base
+    for i in range(len(x)):
+        val=overamp*math.sin(t*simfreqs[i]/(2*math.pi))
+        L+=val/(math.sqrt(math.pow(x[i],2)+math.pow(y[i],2)))
+        R+=val/(math.sqrt(math.pow(x[i]-micDist,2)+math.pow(y[i],2)))
+    return base, base, L,R
+
+
 def FFTprocess(timer):
-    global FREQS
-    global THRESHS
-    real,imag=np.fft.fft(FFLB)
-    for i in range(windowsize):
-        FREQS[i]=np.sqrt(real[i]**2+imag[i]**2)
-    real,imag=np.fft.fft(FFRB)
-    for i in range(windowsize):
-        FREQS[i]=(np.sqrt(real[i]**2+imag[i]**2)+FREQS[i])/2
-    THRESHS=np.sort(FREQS)[windowsize-threshsize:windowsize]
+    global FREQSL
+    global FREQSR
+    global THRESHSL
+    global THRESHSR
+    global THRESHSM
+    real,imag=np.fft.fft(FBLB)
+    for i in range(windowsize/2):
+        FREQSL[i]=np.sqrt(real[i]**2+imag[i]**2)
+    real,imag=np.fft.fft(FBRB)
+    for i in range(windowsize/2):
+        FREQSR[i]=(np.sqrt(real[i]**2+imag[i]**2)+FREQS[i])/2
+    max=np.max(np.concatenate(FREQSR,FREQSL))
+    for i in range(windowsize/2):
+        FREQSR[i]*=4096/max
+        FREQSL[i]*=4096/max
+    THRESHSL=np.sort(FREQSL)[windowsize/2-threshsize:windowsize/2]
+    THRESHSR=np.sort(FREQSR)[windowsize/2-threshsize:windowsize/2]
+    THRESHSM=np.sort(FREQSR+FREQSL)[windowsize/2-threshsize:windowsize/2]
     
 
 def process(timer):
-    global weightsL
-    global weightsR
     global FFLB
     global FBLB
     global FFRB
-    global FBRB
-    global FIVEB
+    global t
+    if(t<timerFreq):
+        t+=1
+    else:
+        t=0
     FFLB= np.roll(FFLB,1)
     FBLB= np.roll(FBLB,1)
     FFRB= np.roll(FFRB,1)
     FBRB= np.roll(FBRB,1)
-    FIVEB= np.roll(FIVEB,1)
-    FFLB[0]=FFL.read() - ADCoffset
-    FBLB[0]=FBL.read() - ADCoffset
-    FFRB[0]=FFR.read() - ADCoffset
-    FBRB[0]=FBR.read() - ADCoffset
-    FIVEB[0]=FIVE.read() - ADCoffset
+    FFLB[0],FFRB[0],FBLB[0],FBRB[0]=simulation(t/timerFreq,x,y,simfreqs, overamp=0.25)
+    #FFLB[0]=FFL.read() - ADCoffset
+    #FBLB[0]=FBL.read() - ADCoffset
+    #FFRB[0]=FFR.read() - ADCoffset
+    #FBRB[0]=FFR.read() - ADCoffset
+
+
+def NLMS(timer):
+    global weightsL
+    global weightsR
+    NLMSL, weightsL = signalProcess(dL,weightsL,FBLB)
+    NLMSR,weightsR=signalProcess(dR,weightsR, FBRB)
     if(not activated):
         dL=FFLB[0]
         dR=FFRB[0]
-    NLMSL, weightsL = signalProcess(dL,weightsL,FBLB)
-    NLMSR,weightsR=signalProcess(dR,weightsR, FBRB)
     # i2c.writeto(DAC_ADDR,(int(cmd+OUTA).to_bytes(1,"big")+int(NLMSL).to_bytes(2,"big")))
     # i2c.writeto(DAC_ADDR,(int(cmd+OUTB).to_bytes(1,"big")+int(dL).to_bytes(2,"big")))
     # i2c.writeto(DAC_ADDR,(int(cmd+OUTC).to_bytes(1,"big")+int(NLMSR).to_bytes(2,"big")))
@@ -109,6 +151,8 @@ t1= Timer(0)
 t1.init(mode=Timer.PERIODIC, freq=timerFreq, callback=process)
 t2= Timer(1)
 t2.init(mode=Timer.PERIODIC, freq=FFTFreq, callback=FFTprocess)
+t3=Timer(2)
+t3.init(mode=Timer.PERIODIC, freq=NLMSFreq, callback=NLMS)
 
 try:
     print("start receive")
@@ -117,7 +161,7 @@ try:
     number2 = 1
     while(1):
         FREQS += 1
-#         micsOut=FREQS[0:windowsize/2].tolist()+THRESHS.tolist() #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
+#         micsOut=FREQSL.tolist()+FREQSR.tolist()+THRESHSL.tolist()+THRESHSR.tolist()+THRESHSM.tolist() #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
         # Command=input('')
         
 #         micsOut = list(map(int, FREQS[0:windowsize//2])) + list(map(int, THRESHS))
