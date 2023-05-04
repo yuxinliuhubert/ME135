@@ -24,17 +24,17 @@ ADCoffset = ADCsize/2
 mu=0.01
 dL=0
 dR=0
-
+df=timerFreq/windowsize
 
 micDist=.2 #m
 
 x=[]
 y=[]
 for i in range(threshsize):
-    x[i]=math.cos(math.pi*(i/4)-math.pi/2)
-    y[i]=math.sin(math.pi*(i/4)-math.pi/2)
+    x[i]=math.cos(math.pi*(i/(threshsize-1))-math.pi/2)
+    y[i]=math.sin(math.pi*(i/(threshsize-1))-math.pi/2)
 
-simfreqs=200*range(1,6)
+simfreqs=200*range(1,threshsize+1)
 
 FFL_PIN =32
 FBL_PIN = 33
@@ -61,6 +61,7 @@ FREQSL=np.zeros(windowsize/2)
 FREQSR=np.zeros(windowsize/2)
 THRESHSL=np.zeros(threshsize)
 THRESHSR=np.zeros(threshsize)
+THRESHSHZ=np.zeros(threshsize)
 
 i2c=SoftI2C(Pin(SCL_PIN),Pin(SDA_PIN),freq=i2cFreq)
 
@@ -97,6 +98,7 @@ def FFTprocess(timer):
     global FREQSR
     global THRESHSL
     global THRESHSR
+    global THRESHSHZ
     real,imag=np.fft.fft(FBLB)
     for i in range(windowsize/2):
         FREQSL[i]=np.sqrt(real[i]**2+imag[i]**2)
@@ -109,6 +111,9 @@ def FFTprocess(timer):
         FREQSL[i]*=4096/max
     THRESHSL=np.sort(FREQSL)[windowsize/2-threshsize:windowsize/2]
     THRESHSR=np.sort(FREQSR)[windowsize/2-threshsize:windowsize/2]
+    THRESHSHZ=np.argsort(FREQSL)[windowsize/2-threshsize:windowsize/2]
+    for i in range(len(THRESHSHZ)):
+        THRESHSHZ[i]*=11.71875
     
 
 def process(timer):
