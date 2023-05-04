@@ -45,7 +45,7 @@ FIVEB= np.zeros(windowsize)
 FREQS=np.zeros(windowsize)
 THRESHS=np.zeros(threshsize)
 
-i2c=SoftI2C(Pin(SCL_PIN),Pin(SDA_PIN),freq=i2cFreq)
+# i2c=SoftI2C(Pin(SCL_PIN),Pin(SDA_PIN),freq=i2cFreq)
 
 FFL=ADC(Pin(FFL_PIN))
 FFL.atten(ADC.ATTN_11DB)
@@ -105,8 +105,8 @@ def process(timer):
     # i2c.writeto(DAC_ADDR,(int(cmd+OUTC).to_bytes(1,"big")+int(NLMSR).to_bytes(2,"big")))
     # i2c.writeto(DAC_ADDR,(int(cmd+OUTD).to_bytes(1,"big")+int(dR).to_bytes(2,"big")))
 
-t1= Timer(0)
-t1.init(mode=Timer.PERIODIC, freq=timerFreq, callback=process)
+# t1= Timer(0)
+# t1.init(mode=Timer.PERIODIC, freq=timerFreq, callback=process)
 t2= Timer(1)
 t2.init(mode=Timer.PERIODIC, freq=FFTFreq, callback=FFTprocess)
 
