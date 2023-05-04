@@ -105,7 +105,7 @@ def FFTprocess(timer):
     real,imag=np.fft.fft(FBRB)
     for i in range(windowsize/2):
         FREQSR[i]=(np.sqrt(real[i]**2+imag[i]**2)+FREQS[i])/2
-    max=np.max(np.concatenate(FREQSR,FREQSL))
+    max=1+0.25/.8
     for i in range(windowsize/2):
         FREQSR[i]*=4096/max
         FREQSL[i]*=4096/max
@@ -113,7 +113,7 @@ def FFTprocess(timer):
     THRESHSR=np.sort(FREQSR)[windowsize/2-threshsize:windowsize/2]
     THRESHSHZ=np.argsort(FREQSL)[windowsize/2-threshsize:windowsize/2]
     for i in range(len(THRESHSHZ)):
-        THRESHSHZ[i]*=11.71875
+        THRESHSHZ[i]*=df
     
 
 def process(timer):
