@@ -61,7 +61,6 @@ FREQSL=np.zeros(windowsize/2)
 FREQSR=np.zeros(windowsize/2)
 THRESHSL=np.zeros(threshsize)
 THRESHSR=np.zeros(threshsize)
-THRESHSM=np.zeros(threshsize)
 
 i2c=SoftI2C(Pin(SCL_PIN),Pin(SDA_PIN),freq=i2cFreq)
 
@@ -98,7 +97,6 @@ def FFTprocess(timer):
     global FREQSR
     global THRESHSL
     global THRESHSR
-    global THRESHSM
     real,imag=np.fft.fft(FBLB)
     for i in range(windowsize/2):
         FREQSL[i]=np.sqrt(real[i]**2+imag[i]**2)
@@ -111,7 +109,6 @@ def FFTprocess(timer):
         FREQSL[i]*=4096/max
     THRESHSL=np.sort(FREQSL)[windowsize/2-threshsize:windowsize/2]
     THRESHSR=np.sort(FREQSR)[windowsize/2-threshsize:windowsize/2]
-    THRESHSM=np.sort(FREQSR+FREQSL)[windowsize/2-threshsize:windowsize/2]
     
 
 def process(timer):
@@ -161,7 +158,7 @@ try:
     number2 = 1
     while(1):
         FREQS += 1
-#         micsOut=FREQSL.tolist()+FREQSR.tolist()+THRESHSL.tolist()+THRESHSR.tolist()+THRESHSM.tolist() #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
+#         micsOut=FREQSL.tolist()+FREQSR.tolist()+THRESHSL.tolist()+THRESHSR.tolist() #this is the array of the most current audio data. FF is feed forward, FB is feed back L and R are right and left, and FIVE is the fifth mic
         # Command=input('')
         
 #         micsOut = list(map(int, FREQS[0:windowsize//2])) + list(map(int, THRESHS))
