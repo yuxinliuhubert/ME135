@@ -105,7 +105,7 @@ def FFTprocess(timer):
     real,imag=np.fft.fft(FBRB)
     for i in range(windowsize/2):
         FREQSR[i]=(np.sqrt(real[i]**2+imag[i]**2)+FREQS[i])/2
-    max=1+0.25/.8
+    max=np.max(np.concatenate(FREQSR,FREQSL))
     for i in range(windowsize/2):
         FREQSR[i]*=4096/max
         FREQSL[i]*=4096/max
