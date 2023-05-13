@@ -4,10 +4,12 @@ import struct
 import random
 import math
 import gc
+import utime
 from machine import Pin, Timer,ADC, SoftI2C, UART
 from ulab import numpy as np
 
-
+timeGap = 5000
+timeComp = 0
 def checkMemory():
     print("Allocated memory:", gc.mem_alloc())
     print("Free memory:", gc.mem_free())
@@ -210,84 +212,89 @@ while(1):
     for i in range(len(THRESHSHZ)):
         THRESHSHZ[i]*=df
 #     checkMemory()
-    
-    freqsStringL = ' '.join(map(str, list(map(int, FREQSL[0:windowsize//2]))))
+    if (utime.ticks_ms() - timeComp > timeGap):
+#         print(timeComp)
+        timeComp = utime.ticks_ms()
+#         print(timeComp)
+#         print(utime.ticks_ms())
+        
+        freqsStringL = ' '.join(map(str, list(map(int, FREQSL[0:windowsize//2]))))
 
-#         freqsStringL = ''
-#         for i in range(windowsize // 2):
-#             freqsStringL += str(int(FREQSL[i]))
-#             checkMemory()
-#             if i < (windowsize // 2) - 1:
-#                 freqsStringL += ' '
-
-
-#         checkMemory()
-    freqsStringR = ' '.join(map(str, list(map(int, FREQSR[0:windowsize//2]))))
-    threshStringH = ' '.join(map(str, list(map(int,THRESHSHZ))))
-    threshStringL = ' '.join(map(str, list(map(int,THRESHSHZ))))
-    threshStringR = ' '.join(map(str, list(map(int,THRESHSHZ))))
+    #         freqsStringL = ''
+    #         for i in range(windowsize // 2):
+    #             freqsStringL += str(int(FREQSL[i]))
+    #             checkMemory()
+    #             if i < (windowsize // 2) - 1:
+    #                 freqsStringL += ' '
 
 
-
-#         message = str(number) +" " + str(number2) + " \n"
-#         # message = str(number)
-#         #     # Command=input('')
-#         #     # print("received: ",Command)
-#         uart.write(message)
-#         #print(message)
-#         number = number + 1
-#         number2 = number2 + 1
-#         time.sleep_ms(1)
-
-
-#         message = ""
-# # 
-#         for i in range(200):
-#             message += str(number) + " "
-# #         message = struct.pack("HH", number, number2)  # Convert the two integers to binary data
-#         message += "\n"
-# #         uart.write(message)
-#         print(message)
-
-
-    # import struct
-
-    # # Define the format string for 200 unsigned 16-bit integers
-    # format_string = "200H"
-
-    # # Create a tuple containing the 200 variables you want to pack
-    # # In this example, I'm using dummy data for simplicity
-    # variables = tuple(range(1, 201))
-
-    # # Use the struct.pack() function to pack the variables together
-    # packed_data = struct.pack(format_string, *variables)
-
-    # # You can print the packed data to see the binary representation
-    # print(packed_data)
-    list_str = freqsStringL + "," + freqsStringR + ","+threshStringH + ","+ threshStringL +","+ threshStringR
-
-    print(list_str)
-    gc.collect()
-    freqsStringL = ''
-    freqsStringR = ''
+    #         checkMemory()
+        freqsStringR = ' '.join(map(str, list(map(int, FREQSR[0:windowsize//2]))))
+        threshStringH = ' '.join(map(str, list(map(int,THRESHSHZ))))
+        threshStringL = ' '.join(map(str, list(map(int,THRESHSHZ))))
+        threshStringR = ' '.join(map(str, list(map(int,THRESHSHZ))))
 
 
 
-    
-#         print("hi")
-#         print("num1: " + str(number) + "  num2:" + str(number2))
-#         number = number +1
-#         number2 = number2 +1 
+    #         message = str(number) +" " + str(number2) + " \n"
+    #         # message = str(number)
+    #         #     # Command=input('')
+    #         #     # print("received: ",Command)
+    #         uart.write(message)
+    #         #print(message)
+    #         number = number + 1
+    #         number2 = number2 + 1
+    #         time.sleep_ms(1)
 
-#         time.sleep_ms(1)
-    i = i + 1
-    if (i == 4096):
-        print("finished")
-        break
-    
-        #This is where the serial communication code goes. All that needs to be put here is something that changes the "activated" boolean to turn things on and off and maybe a pull request for the data.
 
-# except KeyboardInterrupt:
-#     print("exited")
-#     t1.deinit()
-#     pass
+    #         message = ""
+    # # 
+    #         for i in range(200):
+    #             message += str(number) + " "
+    # #         message = struct.pack("HH", number, number2)  # Convert the two integers to binary data
+    #         message += "\n"
+    # #         uart.write(message)
+    #         print(message)
+
+
+        # import struct
+
+        # # Define the format string for 200 unsigned 16-bit integers
+        # format_string = "200H"
+
+        # # Create a tuple containing the 200 variables you want to pack
+        # # In this example, I'm using dummy data for simplicity
+        # variables = tuple(range(1, 201))
+
+        # # Use the struct.pack() function to pack the variables together
+        # packed_data = struct.pack(format_string, *variables)
+
+        # # You can print the packed data to see the binary representation
+        # print(packed_data)
+        list_str = freqsStringL + freqsStringR+threshStringH+ threshStringL + threshStringR
+
+        print(list_str)
+        gc.collect()
+        freqsStringL = ''
+        freqsStringR = ''
+
+
+
+        
+    #         print("hi")
+    #         print("num1: " + str(number) + "  num2:" + str(number2))
+    #         number = number +1
+    #         number2 = number2 +1 
+
+    #         time.sleep_ms(1)
+        i = i + 1
+        if (i == 4096):
+            print("finished")
+            break
+        
+            #This is where the serial communication code goes. All that needs to be put here is something that changes the "activated" boolean to turn things on and off and maybe a pull request for the data.
+
+    # except KeyboardInterrupt:
+    #     print("exited")
+    #     t1.deinit()
+    #     pass
